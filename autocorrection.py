@@ -16,9 +16,7 @@ class Autocorrection(object):
         self.vocabulary = set(word)
         self.counts_of_word = Counter(word)
         self.total_words = float(sum(self.counts_of_word.values()))
-        # Add a small smoothing factor to handle unknown words
         self.smoothing_factor = 1.0
-        # Calculate probabilities with smoothing
         self.prob_of_word = {w: (self.counts_of_word[w] + self.smoothing_factor) / 
                             (self.total_words + self.smoothing_factor * len(self.vocabulary)) 
                             for w in self.vocabulary}
@@ -74,22 +72,17 @@ class Autocorrection(object):
         suggestions = self.edit1(word) or self.edit2(word) or [word]
         best_guesses = [w for w in suggestions if w in self.vocabulary]
 
-        # If no suggestions found in vocabulary, return empty list
         if not best_guesses:
             return []
 
-        # Sort based on custom scoring
         best_guesses.sort(key=lambda w: self.custom_score(w, word))
 
-        # Calculate probability for each suggestion
         suggestion_probs = []
         for w in best_guesses:
-            # Get probability from prob_of_word if exists, otherwise use smoothed probability
             prob = self.prob_of_word.get(w, self.smoothing_factor / 
                                        (self.total_words + self.smoothing_factor * len(self.vocabulary)))
             suggestion_probs.append((w, prob))
 
-        # Normalize probabilities to make them sum to 1
         total_prob = sum(prob for _, prob in suggestion_probs)
         if total_prob > 0:
             suggestion_probs = [(w, p/total_prob) for w, p in suggestion_probs]
